@@ -1,27 +1,16 @@
-// const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
-// const userSchema = new mongoose.Schema({
-//     userId: {
-//         type: Number,
-//         required: true,
-//         uniapu: true,
-//     },
-//     email: {
-//         type: String,
-//         required: true,
-//         unique: true,
-//     },
-//     password: {
-//         type: String,
-//         required: true,
-//         unique: true,
-//     },
-//     createdAt: {
-//         type: Date
-//     },
-//     updatedAt: {
-//         type: Date
-//     }
-// });
+const userSchema = mongoose.Schema({
+    nickName: String,
+    password: String
+});
 
-// module.exports = mongoose.model("Users", userSchema);
+const router = mongoose.model("Users", userSchema);
+module.exports = router;
+
+userSchema.virtual("userId").get(function () {
+  return this._id.toHexString();
+});
+userSchema.set("toJSON", {
+  virtuals: true,
+});
