@@ -15,7 +15,9 @@ module.exports = (sequelize, DataTypes) => {
   }
   Comment.init({
     commentId:{
+      allowNull: false,
       primaryKey: true,
+      autoIncrement: true,
       type: DataTypes.INTEGER
     },
     userId: DataTypes.INTEGER,
@@ -24,6 +26,8 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'Comment',
-  });
+  },{
+    timestamps: true
+  })
   return Comment;
 };

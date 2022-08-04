@@ -12,9 +12,9 @@ module.exports = (req, res, next) => {
     return;
   }
   try {
-      const { userId  } = jwt.verify(tokenValue, "jje-secret-key");
+      const { userId } = jwt.verify(tokenValue, "jje-secret-key");
       // console.log(_id , "요기는?")
-      User.findById(userId ).then((user) => {
+      User.findOne(userId ).then((user) => {
           res.locals.user = user;
           
           next();

@@ -15,7 +15,9 @@ module.exports = (sequelize, DataTypes) => {
   }
   Post.init({
     postId:{
+      allowNull: false,
       primaryKey: true,
+      autoIncrement: true,
       type: DataTypes.INTEGER
     },
     userId: DataTypes.INTEGER,
@@ -25,6 +27,8 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'Post',
-  });
+  },{
+    timestamps: true
+  })
   return Post;
 };

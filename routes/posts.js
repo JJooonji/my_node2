@@ -1,5 +1,5 @@
 const express = require("express");
-const { Post } = require("./models");
+const Post = require("../models/post");
 const authMiddleware = require("../middlewares/auth-middleware");
 // const { connect } = require("./users");
 const router = express.Router();
@@ -47,8 +47,10 @@ router.post("/posts", authMiddleware, async(req, res) => {
             errorMessage: "로그인이 필요합니다."
         })
         return;
+    } else {
+        await Post.create({ userId, title, content })
     }
-    await Post.create({ userId, title, content })
+    
     res.send({});
 });
 

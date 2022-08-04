@@ -1,7 +1,8 @@
 const express = require("express");
 // const Joi = require("joi");
+const { Op } = require("sequelize");
 const jwt = require("jsonwebtoken");
-const { User } = require("./models");
+const { User } = require("../models");
 const authMiddleware = require("../middlewares/auth-middleware");
 const router = express.Router();
 
@@ -22,6 +23,7 @@ const router = express.Router();
 //회원가입 API
 router.post("/signup", async (req, res) => {
   try {
+    // const { userId } = req.params;
     const { nickName, password, confirmPassword } = req.body;
     
 
@@ -33,10 +35,12 @@ router.post("/signup", async (req, res) => {
     });
     return; //이 아래의 코드는 실행될 필요가 없으나 리턴하지 않으면 아래 코드도 읽기때문에 리턴을 해줌.
   }
-
-  const existUsers = await User.findAll({ 
-    where: {
-      nickName }});////이게맞나????
+  console.log("확인")
+  const existUsers = await User.findAll({ nickName
+    // where: {
+    //   nickName }
+    });////이게맞나????
+      console.log(existUsers)
   if(existUsers.length) {
     res.status(400).send({
       errorMessage: "중복된 닉네임이 있습니다."
@@ -53,7 +57,9 @@ router.post("/signup", async (req, res) => {
   });
   }
   catch(err){
+    console.error(err)
     res.status(400).send({
+      
       errorMessage: "error"
     })
   }
@@ -64,7 +70,9 @@ router.post("/login", async (req, res) => {
   const { nickName, password } = req.body;
 
   //nickName,password 일치 확인
-  const user = await User.findOne({ where : { nickName, password } });
+  const user = await User.findAll({
+    [Op.or]: [{nickName}, {password} ]
+      });
 
   if(!user){
     res.status(401).send({
@@ -77,7 +85,7 @@ router.post("/login", async (req, res) => {
 //   const token = jwt.sign({ _id: user._id }, "aa-secret-key")
   const token = jwt.sign({ userId: user.userId }, "jje-secret-key")
   res.send({
-    token, 
+    token 
   });
 });
 
