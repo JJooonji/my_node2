@@ -3,11 +3,12 @@ const mysql = require("mysql")
 const app = express();
 const port = 8080;
 const router = express.Router();
+// const User = require("./models/user");
 
 //mysql 연결
 const { sequelize } = require("./models");
 
-sequelize.sync({ force: false})
+sequelize.sync({ force: false })
   .then(() => {
     console.log("데이터베이스 연결 성공!")
 })
@@ -18,31 +19,18 @@ sequelize.sync({ force: false})
 
 
 // connect();
-// const PostRouter = require("./routes/posts");
-// const commentsRouter = require("./routes/comments");
-// const UserRouter = require("./routes/users");
-// const router = require("./routes/posts");
+const PostRouter = require("./routes/posts");
+const commentsRouter = require("./routes/comments");
+const UserRouter = require("./routes/users");
 // const likesRouter = require("./routes/likes")
 
-//미들웨어?????
-// const requestMiddleware = (req, res, next) => {
-//     console.log("Request URL", req.originalUrl, " - ", new Date());
-//     next();//
-// };
-
-//json 미들웨어를 사용해 body로 전달된 데어터를 사용할 수 있게 함.
-
-// app.use(requestMiddleware);
-// app.get('/', (req, res) => {
-//     res.send('Hello World!');
-// });
 
 //미들웨어 사용
 
-app.use("/", express.urlencoded({ extended: false }), router);
-// app.use(express.json());
+app.use("/", express.urlencoded({ extended: false }), [PostRouter, UserRouter, commentsRouter]);
 
-// app.use("/api", express.json(), router);
+app.use(express.json());
+
 
 
 app.listen(port, () => {
