@@ -47,11 +47,12 @@ router.post("/posts", authMiddleware, async(req, res) => {
             errorMessage: "로그인이 필요합니다."
         })
         return;
-    } else {
-        await Post.create({ userId, title, content })
     }
+        const posting = await Post.create({ userId, title, content })
+        console.log(posting, "췤");
     
-    res.send({});
+    
+    res.send({posting});
 });
 
 //게시글 수정 
