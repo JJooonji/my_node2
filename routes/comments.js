@@ -8,13 +8,13 @@ const router = express.Router();
 
 //댓글 목록 조회
 router.get("/comments/:postId", async (req, res) => {
-    const { postId } =  req.params;
+    const { contentId } =  req.params;
 
     // const comments = await Comment.find({ postId }).sort('-commentCreatedAt');
 
     const comments = await Comment.findAll({
         order : [["postId", "DESC"]],//내림차순 정렬
-        where: postId? { postId } : undefined,
+        where: contentId? { contentId } : undefined,
     });
     res.send({ comments })
 })
@@ -23,7 +23,7 @@ router.get("/comments/:postId", async (req, res) => {
 //댓글 생성 API => 로그인 토큰!!!
 router.post("/comments/:postId", authMiddleware, async(req, res) => {
     const { userId } = res.locals.user;
-    const { postId } = req.params
+    const { contentId } = req.params
     const { nickName, comment} = req.body;
 
     const comments = await Comment.findAll({ postId })
