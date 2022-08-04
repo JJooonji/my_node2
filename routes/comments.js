@@ -1,71 +1,101 @@
 const express = require("express");
-const Posts = require("../schemas/post");
-const Comments = require("../schemas/comment");
+// const Posts = require("../schemas/post");
+const { Comment } = require("./models");
+const authMiddleware = require("../middlewares/auth-middleware");
 const router = express.Router();
-const moment = require("moment");
+// const moment = require("moment");
 
 
-//댓글 목록 상세 조회
+//댓글 목록 조회
 router.get("/comments/:postId", async (req, res) => {
     const { postId } =  req.params;
 
-    const comments = await Comments.find({ postId: Number(postId) }).sort('-commentCreatedAt');
+    // const comments = await Comment.find({ postId }).sort('-commentCreatedAt');
 
-    res.json({ comments })
+    const comments = await Comment.findAll({
+        order : [["postId", "DESC"]],//내림차순 정렬
+        where: postId? { postId } : undefined,
+    });
+    res.send({ comments })
 })
 
 
 //댓글 생성 API => 로그인 토큰!!!
-router.post("/comments/:postId", async(req, res) => {
+router.post("/comments/:postId", authMiddleware, async(req, res) => {
+    const { userId } = res.locals.user;
     const { postId } = req.params
-    const { nickName, commentPosting} = req.body;
+    const { nickName, comment} = req.body;
 
-    const comments = await Comments.find({ postId })
-    if(!commentPosting){
+    const comments = await Comment.findAll({ postId })
+    if(!userId){
+        return res.status(400).send({
+            errorMessage: "로그인이 필요합니다."
+        })
+    }
+    if(!comments){
         return res
         .status(400)
-        .json({ success: false, errorMessage: "댓글 내용을 입력해주세요." })
+        .send({ success: false, errorMessage: "댓글 내용을 입력해주세요." })
     }
 
-    const createdComments = await Comments.create({ 
+    const createdComments = await Comment.create({ 
         postId,
         nickName, 
-        commentPosting, 
-        commentCreatedAt : moment().format("YYYY-MM-DD HH:mm:ss")
+        comment
     });
 
-    res.json({comments : createdComments })
+    res.send({ createdComments })
 });
 
 //댓글 수정 
-router.put("/comments/:commentId", async (req, res) => { //commentId부분에 디비 문자열 다 넣기
+router.put("/comments/:commentId", authMiddleware, async (req, res) => { //commentId부분에 디비 문자열 다 넣기
+    const { userId } = res.locals.user;
     const { commentId } = req.params;
-    const { commentPosting } = req.body;
+    const { comment } = req.body;
 
-    const comments = await Comments.find({ _id : commentId });
+    const existComments = await Comment.findOne({
+        where :{
+            userId,
+            commentId
+    } });
     
-    if(!commentPosting){
+    if(existComments.userId !== userId){
         return res
         .status(400)
-        .json({ success: false, errorMessage: "댓글 내용을 입력해주세요." })
+        .send({success: false, errorMessage: "로그인이 필요한 기능입니다."})
     }
-        await Comments.updateOne({ _id: commentId }, { $set: { commentPosting } })
-    
-        res.json({ success: true })
-})
+    else if(!existComments){
+        return res
+        .status(400)
+        .send({ success: false, errorMessage: "댓글 내용을 입력해주세요." })
+    } else {
+        await Comment.updateOne({ comment })
+    }
+        
+        res.sned({})
+});
 
 
 //댓글 삭제
-router.delete("/comments/:commentId", async (req, res) => { //commentId부분에 디비 문자열 다 넣기
+router.delete("/comments/:commentId", authMiddleware, async (req, res) => { //commentId부분에 디비 문자열 다 넣기
+    const { userId } = res.locals.user;
     const { commentId } = req.params;
     
-    const existComment = await Comments.find({ _id : commentId });
+    const existComment = await Comment.findOne({ 
+        where : {
+            userId,
+            commentId }
+    });
 
-    if(existComment.length) {
-        await Comments.deleteOne({ _id: commentId })
+    if(existComment.userId !== userId) {
+        return res
+        .status(400)
+        .send({ success: false, errorMessage: "로그인이 필요한 기능입니다." })
+    } else{
+        await existComment.destroy;
     }
-
-    res.json({ success : true })
+    
+    res.send({})
 })
 
 

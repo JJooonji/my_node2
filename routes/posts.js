@@ -1,67 +1,107 @@
 const express = require("express");
-const Posts = require("../schemas/post")
+const { Post } = require("./models");
+const authMiddleware = require("../middlewares/auth-middleware");
+// const { connect } = require("./users");
 const router = express.Router();
 // const moment = require("moment");
 
 
 //목록 조회 API
 router.get("/posts", async (req, res) => {
-    
-    const posts = await Posts.find({}).sort('-createdAt')
+    const { content } = req.query;
 
-    res.json({posts})
+    // const posts = await Post.findAll({}).sort('-createdAt')
+    const posts = await Post.findAll({
+        order: [["postId", "DESC"]],//order는 정렬 처리!
+        where: content? { content } : undefined,///여기도 이게 맞나 모르겠당...
+    })
+    res.send({posts})
 });
 
 //목록 상세 조회 API
 router.get("/posts/:postId", async (req, res) => {
     const { postId } =  req.params;
 
-    const posts  = await Posts.findById({ _id: postId });
+    const posts  = await Post.findByPK( postId );
 
-    res.json({ posts })
+    if(!posts) {
+        res.status(400).send({})
+    }else{
+        res.send({ posts })
+    }
+    
 });
 
-//게시글 생성 API
-router.post("/posts", async(req, res) => {
-    const { userId, nickName, password, title, content, likes } = req.body;
+//게시글 생성 API///여기도 이상한것 같다..
+router.post("/posts", authMiddleware, async(req, res) => {
+    const { userId } = res.locals.user;
+    const { title, content } = req.body;
 
-    const createdPost = await Posts.create({ 
-        userId, nickName, password, title, content, likes
-    });
+    // const createdPost = await Post.create({ 
+    //     userId, title, content
+    // });
 
-    res.json({ posts: createdPost })
+    // res.json({ posts: createdPost })
+    if(!userId) {
+        res.status(400).send({
+            errorMessage: "로그인이 필요합니다."
+        })
+        return;
+    }
+    await Post.create({ userId, title, content })
+    res.send({});
 });
 
 //게시글 수정 
-router.put("/posts/:postId", async(req, res) => {
+router.put("/posts/:postId", authMiddleware, async(req, res) => {
+    const { userId } = res.locals.user;
     const { postId } = req.params;    
-    const { title, content, password } = req.body;
+    const { title, content } = req.body;
     
-    const [posts] = await Posts.find({ postId : Number( postId ) }); //posts에 대괄호를 넣어서 그 안의 중괄호로 접근
+    // const [posts] = await Post.findAll({ postId  }); //posts에 대괄호를 넣어서 그 안의 중괄호로 접근
+    const existPost = await Post.findOne({
+        where:{
+            userId,
+            postId,
+        }
+    })
 
-    if(posts.password !== password) {
-        return res.status(400).json({success: false, errorMessage: "비밀번호 불일치!"})
+    if(existPost.userId !== userId) {
+        return res
+        .status(400)
+        .send({success: false, errorMessage: "로그인이 필요한 기능입니다."})
     } else {
-        await Posts.updateOne({ postsId: Number(postId) }, {$set: { title, content }})  
+        // await Post.updateOne({ _id : postId }, {$set: { title, content }})  
+        await Post.update({ title, content })
     }
     
-    res.json({ success: true })
+    // res.json({ success: true })
+    res.send({});
 });
 
 
 //게시글 삭제 
-router.delete("/posts/:postId", async (req, res) => {
+router.delete("/posts/:postId", authMiddleware, async (req, res) => {
+    const { userId } = res.locals.user;
     const { postId } = req.params //파라미터로 담아오는 모든 값은 문자열 
-    const { password } = req.body;
+    // const { password } = req.body;
 
-    const [existsPost] = await Posts.find({ postId : Number(postId)}); //posts에 대괄호를 넣어서 그 안의 중괄호로 접근
-        if(existsPost.password !== password) {
-            return res.status(400).json({ success: false, errorMessage: "비밀번호 불일치!" })
+    const existPost = await Post.findOne({ 
+        where: {
+            userId,
+            postId }
+        }); //posts에 대괄호를 넣어서 그 안의 중괄호로 접근
+        if(existPost.userId !== userId) {
+            return res
+            .status(400)
+            .send({ success: false, errorMessage: "로그인이 필요한 기능입니다." })
         } else {
-            await Posts.deleteOne({ postId: Number(postId) });
+            // await Post.deleteOne({ postId });
+            await existPost.destroy;
         }
         
-    res.json({ success: true })
+    // res.json({ success: true })
+    res.send({});
 });
 
 
